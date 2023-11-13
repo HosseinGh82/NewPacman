@@ -1,3 +1,14 @@
+# <editor-fold desc="Imports">
+import math
+import random
+from time import sleep
+import os
+
+
+# </editor-fold>
+
+
+# <editor-fold desc="Classes">
 class Game:
     def __init__(self, mapG, pac, gh1, gh2, scb, sc):
         self.pacman = pac
@@ -28,11 +39,17 @@ class Pacman:
         self.x = locX
         self.y = locY
 
+    def printPackmanSituation(self):
+        print("Pacman location: (%d, %d)" % (self.x, self.y))
+
 
 class Ghost:
     def __init__(self, locX, locY):
         self.x = locX
         self.y = locY
+
+    def printGhostSituation(self):
+        print("Ghost location: (%d, %d)" % (self.x, self.y))
 
 
 class Map:
@@ -43,13 +60,11 @@ class Map:
 
     def fillMap(self):
         self.array = [["#" if i == 0 or i == self.height - 1 or j == 0 or j == self.width - 1
-                       else "+" for j in range(self.width)] for i in range(self.height)]
+                       else " " for j in range(self.width)] for i in range(self.height)]
 
-        self.array[1][1] = " "
+        self.array[1][1] = "+"
 
         # <editor-fold desc="Collision in map">
-        self.array[4][3] = "#"
-        self.array[4][16] = "#"
         self.array[1][5] = '#'
         self.array[1][14] = '#'
         self.array[2][2] = '#'
@@ -113,3 +128,80 @@ class Map:
             for j in range(self.width):
                 print(self.array[i][j], end=" ")
             print("")
+
+
+# </editor-fold>
+
+
+# <editor-fold desc="Objects">
+pacman = Pacman(1, 1)
+ghost1 = Ghost(1, 12)
+ghost2 = Ghost(1, 13)
+
+height = 11
+width = 20
+array = [[0] * width] * height
+mapGame = Map(height, width, array)
+mapGame.fillMap()
+
+game = Game(mapGame, pacman, ghost1, ghost2, 0, 0)
+
+
+# </editor-fold>
+
+
+def doesEatAllFoods(gameTemp):
+    for i in range(gameTemp.mapGame.height):
+        for j in range(gameTemp.mapGame.width):
+            if gameTemp.mapGame.array[i][j] == "+":
+                return False
+    return True
+
+
+def finishGame(gameTemp):
+    if (gameTemp.pacman.x == gameTemp.ghost1.x and gameTemp.pacman.y == gameTemp.ghost1.y) or (
+            gameTemp.pacman.x == gameTemp.ghost2.x and gameTemp.pacman.y == gameTemp.ghost2.y):
+        return -1
+    elif doesEatAllFoods(gameTemp):
+        return 1
+    else:
+        return 0
+
+
+def ghostMove(gameMapArray, gh):
+    direction = {0: "U", 1: "R", 2: "D", 3: "L"}
+    while True:
+        r = random.randint(0, 3)
+        if r == 0 and gameMapArray[gh.x - 1][gh.y] != "#":
+            return gh.x - 1, gh.y
+        if r == 1 and gameMapArray[gh.x][gh.y + 1] != "#":
+            return gh.x, gh.y + 1
+        if r == 2 and gameMapArray[gh.x + 1][gh.y] != "#":
+            return gh.x + 1, gh.y
+        if r == 3 and gameMapArray[gh.x][gh.y - 1] != "#":
+            return gh.x, gh.y - 1
+
+
+def startGame(gameTemp, turn):
+    while True:
+        gameTemp.printGame()
+        if finishGame(gameTemp) == -1:
+            print("GAME OVER")
+            break
+        elif finishGame(gameTemp) == 1:
+            print("YOU WIN")
+            break
+
+        if turn == 0:
+            continue
+        if turn == 1:
+            gameTemp.ghost1.x, gameTemp.ghost1.y = ghostMove(gameTemp.mapGame.array, gameTemp.ghost1)
+            turn = 2
+        if turn == 2:
+            gameTemp.ghost2.x, gameTemp.ghost2.y = ghostMove(gameTemp.mapGame.array, gameTemp.ghost2)
+            turn = 1
+        sleep(0.01)
+        os.system("cls")
+
+
+startGame(game, 1)
