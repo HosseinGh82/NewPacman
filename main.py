@@ -201,6 +201,7 @@ def validMove(gameTemp, x, y, move):
 def bestMove(gameTemp, target):
     move = "D"
     bestScore = float('-inf')
+
     for i in ["U", "R", "D", "L"]:
         if validMove(gameTemp, gameTemp.pacman.x, gameTemp.pacman.y, i) != -1:
             pacman_future_x, pacman_future_y = validMove(gameTemp, gameTemp.pacman.x, gameTemp.pacman.y, i)
@@ -209,20 +210,20 @@ def bestMove(gameTemp, target):
 
             food = gameTemp.mapGame.array[pacman_future_x][pacman_future_y]
 
-            print("Target: ", target)
             score = minimax(gameTemp, 0, target, 0)
 
             gameTemp.pacman.x, gameTemp.pacman.y = pacman_now_x, pacman_now_y
             gameTemp.mapGame.array[pacman_future_x][pacman_future_y] = food
 
-            print("score: ", i ,bestScore)
+            print("move: ", move, bestScore)
             if score > bestScore:
                 bestScore = score
                 move = i
 
     x, y = validMove(gameTemp, gameTemp.pacman.x, gameTemp.pacman.y, move)
     gameTemp.mapGame.array[x][y] = " "
-    return validMove(gameTemp, gameTemp.pacman.x, gameTemp.pacman.y, move)
+
+    return x, y
 
 
 def scoreFunction(gameTemp):
@@ -231,21 +232,30 @@ def scoreFunction(gameTemp):
 
     closest = float('inf')
     A = math.sqrt((gameTemp.mapGame.height - 2) ** 2 + (gameTemp.mapGame.width - 2) ** 2)
+
     for i in range(gameTemp.mapGame.height):
         for j in range(gameTemp.mapGame.width):
             if gameTemp.mapGame.array[i][j] == "+":
                 fromFood = math.sqrt(((gameTemp.pacman.x - i) ** 2) + (gameTemp.pacman.y - j) ** 2)
-                # print("from food", fromFood)
                 if fromFood < closest:
                     closest = fromFood
 
-    # print("Closet: ", closest)
     gameTemp.score = ((A - closest) / A) * 9
 
-    if min(fromGhost1, fromGhost2) < 3:
-        gameTemp.score *= -1
+    # Add a penalty for proximity to ghosts
+    ghost_penalty = 2  # You can adjust this value
+
+    # Use a combination of factors to determine the score
+    score_factor = 0.5  # Adjust this to balance the influence of different factors
+
+    gameTemp.score += score_factor * (1 / (fromGhost1 + 1))  # Add a factor based on the inverse of the distance to ghosts
+    gameTemp.score += score_factor * (1 / (fromGhost2 + 1))
+
+    if fromGhost1 < ghost_penalty or fromGhost2 < ghost_penalty:
+        gameTemp.score -= ghost_penalty
 
     return gameTemp.score
+
 
     # if min(fromGhost2, fromGhost1) < 3:
     #     return min(fromGhost2, fromGhost1)
@@ -255,47 +265,43 @@ def scoreFunction(gameTemp):
 
 def minimax(gameTemp, currentDepth, targetDepth, isMaximizing):
     if currentDepth == targetDepth:
-        gameTemp.score = scoreFunction(game)
-        return gameTemp.score
+        return scoreFunction(gameTemp)
 
     if isMaximizing == 0:
         bestScore = float('-inf')
-        for i in ["U", "R", "D", "L"]:
-            if validMove(gameTemp, gameTemp.pacman.x, gameTemp.pacman.y, i) != -1:
-                pacman_future_x, pacman_future_y = validMove(gameTemp, gameTemp.pacman.x, gameTemp.pacman.y, i)
-                pacman_now_x, pacman_now_y = gameTemp.ghost1.x, gameTemp.pacman.y
-
-                food = gameTemp.mapGame.array[pacman_future_x][pacman_future_y]
+        for move in ["U", "R", "D", "L"]:
+            if validMove(gameTemp, gameTemp.pacman.x, gameTemp.pacman.y, move) != -1:
+                pacman_future_x, pacman_future_y = validMove(gameTemp, gameTemp.pacman.x, gameTemp.pacman.y, move)
+                pacman_now_x, pacman_now_y = gameTemp.pacman.x, gameTemp.pacman.y
 
                 gameTemp.pacman.x, gameTemp.pacman.y = pacman_future_x, pacman_future_y
 
-                score = minimax(gameTemp, currentDepth, targetDepth, 1)
+                score = minimax(gameTemp, currentDepth + 1, targetDepth, 1)
 
-                gameTemp.mapGame.array[pacman_future_x][pacman_future_y] = food
                 gameTemp.pacman.x, gameTemp.pacman.y = pacman_now_x, pacman_now_y
 
                 bestScore = max(bestScore, score)
         return bestScore
-    if isMaximizing == 1:
+    elif isMaximizing == 1:
         bestScore = float('inf')
-        for i in ["U", "R", "D", "L"]:
-            if validMove(gameTemp, gameTemp.ghost1.x, gameTemp.ghost1.y, i) != -1:
-                ghost1_future_x, ghost1_future_y = validMove(gameTemp, gameTemp.ghost1.x, gameTemp.ghost1.y, i)
+        for move in ["U", "R", "D", "L"]:
+            if validMove(gameTemp, gameTemp.ghost1.x, gameTemp.ghost1.y, move) != -1:
+                ghost1_future_x, ghost1_future_y = validMove(gameTemp, gameTemp.ghost1.x, gameTemp.ghost1.y, move)
                 ghost1_now_x, ghost1_now_y = gameTemp.ghost1.x, gameTemp.ghost1.y
 
                 gameTemp.ghost1.x, gameTemp.ghost1.y = ghost1_future_x, ghost1_future_y
 
-                score = minimax(gameTemp, currentDepth, targetDepth, 2)
+                score = minimax(gameTemp, currentDepth + 1, targetDepth, 2)
 
                 gameTemp.ghost1.x, gameTemp.ghost1.y = ghost1_now_x, ghost1_now_y
 
                 bestScore = min(bestScore, score)
         return bestScore
-    if isMaximizing == 2:
+    else:  # isMaximizing == 2
         bestScore = float('inf')
-        for i in ["U", "R", "D", "L"]:
-            if validMove(gameTemp, gameTemp.ghost2.x, gameTemp.ghost2.y, i) != -1:
-                ghost2_future_x, ghost2_future_y = validMove(gameTemp, gameTemp.ghost2.x, gameTemp.ghost2.y, i)
+        for move in ["U", "R", "D", "L"]:
+            if validMove(gameTemp, gameTemp.ghost2.x, gameTemp.ghost2.y, move) != -1:
+                ghost2_future_x, ghost2_future_y = validMove(gameTemp, gameTemp.ghost2.x, gameTemp.ghost2.y, move)
                 ghost2_now_x, ghost2_now_y = gameTemp.ghost2.x, gameTemp.ghost2.y
 
                 gameTemp.ghost2.x, gameTemp.ghost2.y = ghost2_future_x, ghost2_future_y
@@ -304,13 +310,14 @@ def minimax(gameTemp, currentDepth, targetDepth, isMaximizing):
 
                 gameTemp.ghost2.x, gameTemp.ghost2.y = ghost2_now_x, ghost2_now_y
 
-                gameTemp.score = min(score, bestScore)
+                bestScore = min(bestScore, score)
         return bestScore
 
 
 def startGame(gameTemp, target, turn):
     i = 0
-    while True:
+    targetDepth = 3  # Adjust the target depth as needed
+    while i <= 10000:
         i += 1
         gameTemp.printGame()
         if finishGame(gameTemp) == -1:
@@ -323,14 +330,14 @@ def startGame(gameTemp, target, turn):
         if turn == 0:
             gameTemp.pacman.x, gameTemp.pacman.y = bestMove(gameTemp, target)
             turn = 1
-        if turn == 1:
+        elif turn == 1:
             gameTemp.ghost1.x, gameTemp.ghost1.y = ghostMove(gameTemp.mapGame.array, gameTemp.ghost1)
             turn = 2
-        if turn == 2:
+        elif turn == 2:
             gameTemp.ghost2.x, gameTemp.ghost2.y = ghostMove(gameTemp.mapGame.array, gameTemp.ghost2)
             turn = 0
         sleep(0.05)
         os.system("cls")
 
 
-startGame(game, 0, 0)
+startGame(game, 1, 0)
