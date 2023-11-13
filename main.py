@@ -209,16 +209,16 @@ def bestMove(gameTemp, target):
 
             food = gameTemp.mapGame.array[pacman_future_x][pacman_future_y]
 
-            print("Target: ", target)
+            # print("Target: ", target)
             score = minimax(gameTemp, 0, target, 0)
 
             gameTemp.pacman.x, gameTemp.pacman.y = pacman_now_x, pacman_now_y
             gameTemp.mapGame.array[pacman_future_x][pacman_future_y] = food
 
-            print("score: ", i ,bestScore)
             if score > bestScore:
                 bestScore = score
                 move = i
+            # print("score: ", i, bestScore)
 
     x, y = validMove(gameTemp, gameTemp.pacman.x, gameTemp.pacman.y, move)
     gameTemp.mapGame.array[x][y] = " "
@@ -241,6 +241,7 @@ def scoreFunction(gameTemp):
 
     # print("Closet: ", closest)
     gameTemp.score = ((A - closest) / A) * 9
+    # print("sssssssssssssssss", gameTemp.score)
 
     if min(fromGhost1, fromGhost2) < 3:
         gameTemp.score *= -1
@@ -255,7 +256,7 @@ def scoreFunction(gameTemp):
 
 def minimax(gameTemp, currentDepth, targetDepth, isMaximizing):
     if currentDepth == targetDepth:
-        gameTemp.score = scoreFunction(game)
+        gameTemp.score = scoreFunction(gameTemp)
         return gameTemp.score
 
     if isMaximizing == 0:
