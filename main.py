@@ -1,8 +1,10 @@
 # <editor-fold desc="Imports">
 import math
 import random
+from collections import deque
 from time import sleep
 import os
+import networkx as nx
 
 
 # </editor-fold>
@@ -41,14 +43,13 @@ class Game:
         return True
 
     def finishGame(self):
-        # if (self.pacman.x == self.ghost1.x and self.pacman.y == self.ghost1.y) or (
-        #         self.pacman.x == self.ghost2.x and self.pacman.y == self.ghost2.y):
-        #     return -1
-        # elif self.doesEatAllFoods():
-        #     return 1
-        # else:
-        #     return 0
-        return 0
+        if (self.pacman.x == self.ghost1.x and self.pacman.y == self.ghost1.y) or (
+                self.pacman.x == self.ghost2.x and self.pacman.y == self.ghost2.y):
+            return -1
+        elif self.doesEatAllFoods():
+            return 1
+        else:
+            return 0
 
     def ghostMove(self, gameMapArray, gh):
         direction = {0: "U", 1: "R", 2: "D", 3: "L"}
@@ -80,7 +81,7 @@ class Game:
 
     def minimax(self, currentDepth, targetDepth, isMaximizing):
         if currentDepth == targetDepth:
-            self.score = self.scoreFunction()
+            self.score = self.scoreFunction3()
             return self.score
 
         if isMaximizing == 0:
@@ -99,25 +100,22 @@ class Game:
 
                     self.mapGame.array[pacman_future_x][pacman_future_y] = food
                     self.pacman.x, self.pacman.y = pacman_now_x, pacman_now_y
-                    print("SCORE", score, i)
+                    # print("SCORE", score, i)
                     if score > bestScore:
                         bestScore = score
                         move = i
 
-            # print("currentDepth:", currentDepth)
-            # print("targetDepth:", targetDepth)
             if currentDepth == 0:
                 x, y = self.validMove(self.pacman.x, self.pacman.y, move)
+                if self.mapGame.array[x][y] == "+":
+                    self.scoreBoard += 9
+                else:
+                    self.scoreBoard -= 1
                 self.mapGame.array[x][y] = " "
                 print("BestSCORE", bestScore)
                 return self.validMove(self.pacman.x, self.pacman.y, move)
-
             else:
                 return bestScore
-            # if targetDepth == currentDepth:
-            #     return self.validMove(self.pacman.x, self.pacman.y, move)
-            # else:
-            #     return bestScore
 
         elif isMaximizing == 1:
             bestScore = float('inf')
@@ -149,16 +147,14 @@ class Game:
 
                     self.ghost2.x, self.ghost2.y = ghost2_now_x, ghost2_now_y
 
-                    # print(score)
                     bestScore = min(score, bestScore)
             return bestScore
 
-    def scoreFunction(self):
+    def scoreFunction1(self):
         fromGhost1 = math.sqrt(
             (self.pacman.x - self.ghost1.x) ** 2 + (self.pacman.y - self.ghost1.y) ** 2)
         fromGhost2 = math.sqrt(
             (self.pacman.x - self.ghost2.x) ** 2 + (self.pacman.y - self.ghost2.y) ** 2)
-
         closest = float('inf')
         A = math.sqrt((self.mapGame.height - 2) ** 2 + (self.mapGame.width - 2) ** 2)
         for i in range(self.mapGame.height):
@@ -169,18 +165,105 @@ class Game:
                         closest = fromFood
 
         score = ((A - closest) / A) * 9
-        # print(self.score)
+        if min(fromGhost1, fromGhost2) < 3:
+            score *= -1
+        return score
 
-        # if min(fromGhost1, fromGhost2) < 3:
-        #     self.score *= -1
-        # return min(fromGhost1, fromGhost2)
+    def scoreFunction2(self):
+        G = nx.Graph()
+
+        # Create a graph representation from the map
+        for i in range(self.mapGame.height):
+            for j in range(self.mapGame.width):
+                if self.mapGame.array[i][j] != "#":
+                    G.add_node((i, j))
+
+                    # Add edges based on valid moves
+                    if i > 0 and self.mapGame.array[i - 1][j] != "#":
+                        G.add_edge((i, j), (i - 1, j))
+                    if i < self.mapGame.height - 1 and self.mapGame.array[i + 1][j] != "#":
+                        G.add_edge((i, j), (i + 1, j))
+                    if j > 0 and self.mapGame.array[i][j - 1] != "#":
+                        G.add_edge((i, j), (i, j - 1))
+                    if j < self.mapGame.width - 1 and self.mapGame.array[i][j + 1] != "#":
+                        G.add_edge((i, j), (i, j + 1))
+
+        fromGhost1 = nx.shortest_path_length(G, (self.pacman.x, self.pacman.y), (self.ghost1.x, self.ghost1.y))
+        fromGhost2 = nx.shortest_path_length(G, (self.pacman.x, self.pacman.y), (self.ghost2.x, self.ghost2.y))
+
+        closest = float('inf')
+        A = math.sqrt((self.mapGame.height - 2) ** 2 + (self.mapGame.width - 2) ** 2)
+
+        for i in range(self.mapGame.height):
+            for j in range(self.mapGame.width):
+                if self.mapGame.array[i][j] == "+":
+                    fromFood = nx.shortest_path_length(G, (self.pacman.x, self.pacman.y), (i, j))
+                    if fromFood < closest:
+                        closest = fromFood
+
+        score = ((A - closest) / A) * 9
+        if min(fromGhost1, fromGhost2) < 2:
+            score *= -1
+        return score
+
+    def scoreFunction3(self):
+        G = nx.Graph()
+
+        # Create a graph representation from the map
+        for i in range(self.mapGame.height):
+            for j in range(self.mapGame.width):
+                if self.mapGame.array[i][j] != "#":
+                    G.add_node((i, j))
+
+                    # Add edges based on valid moves
+                    if i > 0 and self.mapGame.array[i - 1][j] != "#":
+                        G.add_edge((i, j), (i - 1, j))
+                    if i < self.mapGame.height - 1 and self.mapGame.array[i + 1][j] != "#":
+                        G.add_edge((i, j), (i + 1, j))
+                    if j > 0 and self.mapGame.array[i][j - 1] != "#":
+                        G.add_edge((i, j), (i, j - 1))
+                    if j < self.mapGame.width - 1 and self.mapGame.array[i][j + 1] != "#":
+                        G.add_edge((i, j), (i, j + 1))
+
+        def bfs_nearest_food(source):
+            visited = set()
+            queue = deque([(source, 0)])  # Queue to perform BFS with distances
+
+            while queue:
+                current, distance = queue.popleft()
+                x, y = current
+
+                if self.mapGame.array[x][y] == "+":
+                    return distance  # Return distance to the nearest food
+
+                visited.add(current)
+
+                # Add adjacent cells to the queue
+                for neighbor in G.neighbors(current):
+                    if neighbor not in visited:
+                        queue.append((neighbor, distance + 1))
+                        visited.add(neighbor)
+
+            return float('inf')  # Return infinity if no food is found
+
+        fromGhost1 = nx.shortest_path_length(G, (self.pacman.x, self.pacman.y), (self.ghost1.x, self.ghost1.y))
+        fromGhost2 = nx.shortest_path_length(G, (self.pacman.x, self.pacman.y), (self.ghost2.x, self.ghost2.y))
+
+        closest_food = bfs_nearest_food((self.pacman.x, self.pacman.y))
+
+        A = math.sqrt((self.mapGame.height - 2) ** 2 + (self.mapGame.width - 2) ** 2)
+
+        score = ((A - closest_food) / A) * 9
+        if min(fromGhost1, fromGhost2) < 3:
+            score *= -1
         return score
 
     def startGame(self, target, turn):
         i = 0
-        while i <= 150:
+        while True:
             i += 1
             self.printGame()
+            print("Step:", i)
             if self.finishGame() == -1:
                 print("GAME OVER")
                 break
@@ -189,11 +272,7 @@ class Game:
                 break
 
             if turn == 0:
-                # print("asdfasf")
-                # print(type(self.minimax((0, target, 0))))
-                # print("1111111111111111111111111111111111111111111", self.minimax(0, target, 0, returnMove))
                 self.pacman.x, self.pacman.y = self.minimax(0, target, 0)
-                # s = self.minimax(0, target, 0)
                 turn = 1
             if turn == 1:
                 self.ghost1.x, self.ghost1.y = self.ghostMove(self.mapGame.array, self.ghost1)
@@ -201,8 +280,8 @@ class Game:
             if turn == 2:
                 self.ghost2.x, self.ghost2.y = self.ghostMove(self.mapGame.array, self.ghost2)
                 turn = 0
-            # sleep(0.01)
-            # os.system("cls")
+            sleep(0.01)
+            os.system("cls")
 
 
 class Pacman:
