@@ -198,8 +198,8 @@ class Game:
             if turn == 2:
                 self.ghost2.x, self.ghost2.y = self.ghostMove(self.mapGame.array, self.ghost2)
                 turn = 0
-            sleep(0.01)
-            os.system("cls")
+            # sleep(0.01)
+            # os.system("cls")
 
 
 class Pacman:
