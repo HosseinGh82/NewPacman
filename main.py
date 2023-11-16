@@ -12,10 +12,12 @@ import networkx as nx
 
 # <editor-fold desc="Classes">
 class Game:
-    def __init__(self, mapG, pac, gh1, gh2, scb, sc):
+    def __init__(self, mapG, pac, gh1, gh2, gh3, gh4, scb, sc):
         self.pacman = pac
         self.ghost1 = gh1
         self.ghost2 = gh2
+        self.ghost3 = gh3
+        self.ghost4 = gh4
         self.scoreBoard = scb
         self.score = sc
         self.mapGame = mapG
@@ -24,11 +26,18 @@ class Game:
         print("Score: %d" % self.scoreBoard)
         for i in range(self.mapGame.height):
             for j in range(self.mapGame.width):
-                if i == self.ghost1.x and j == self.ghost1.y or i == self.ghost2.x and j == self.ghost2.y:
+                if i == self.ghost1.x and j == self.ghost1.y or \
+                        i == self.ghost2.x and j == self.ghost2.y or \
+                        i == self.ghost3.x and j == self.ghost3.y or \
+                        i == self.ghost4.x and j == self.ghost4.y:
                     if i == self.ghost1.x and j == self.ghost1.y:
                         print("G", end=" ")
-                    else:
+                    elif i == self.ghost2.x and j == self.ghost2.y:
                         print("g", end=" ")
+                    elif i == self.ghost3.x and j == self.ghost3.y:
+                        print("H", end=" ")
+                    else:
+                        print("O", end=" ")
                 elif i == self.pacman.x and j == self.pacman.y:
                     print("P", end=" ")
                 else:
@@ -44,7 +53,9 @@ class Game:
 
     def finishGame(self):
         if (self.pacman.x == self.ghost1.x and self.pacman.y == self.ghost1.y) or (
-                self.pacman.x == self.ghost2.x and self.pacman.y == self.ghost2.y):
+                self.pacman.x == self.ghost2.x and self.pacman.y == self.ghost2.y) or (
+                self.pacman.x == self.ghost3.x and self.pacman.y == self.ghost3.y) or (
+                self.pacman.x == self.ghost4.x and self.pacman.y == self.ghost4.y):
             return -1
         elif self.doesEatAllFoods():
             return 1
@@ -143,12 +154,45 @@ class Game:
 
                     self.ghost2.x, self.ghost2.y = ghost2_future_x, ghost2_future_y
 
-                    score = self.minimax(currentDepth + 1, targetDepth, 0)
+                    score = self.minimax(currentDepth, targetDepth, 0)
 
                     self.ghost2.x, self.ghost2.y = ghost2_now_x, ghost2_now_y
 
                     bestScore = min(score, bestScore)
             return bestScore
+
+        elif isMaximizing == 3:
+            bestScore = float('inf')
+            for i in ["U", "R", "D", "L"]:
+                if self.validMove(self.ghost3.x, self.ghost3.y, i) != -1:
+                    ghost3_future_x, ghost3_future_y = self.validMove(self.ghost3.x, self.ghost3.y, i)
+                    ghost3_now_x, ghost3_now_y = self.ghost3.x, self.ghost3.y
+
+                    self.ghost3.x, self.ghost3.y = ghost3_future_x, ghost3_future_y
+
+                    score = self.minimax(currentDepth, targetDepth, 3)
+
+                    self.ghost3.x, self.ghost3.y = ghost3_now_x, ghost3_now_y
+
+                    bestScore = min(score, bestScore)
+            return bestScore
+
+        elif isMaximizing == 4:
+            bestScore = float('inf')
+            for i in ["U", "R", "D", "L"]:
+                if self.validMove(self.ghost4.x, self.ghost4.y, i) != -1:
+                    ghost4_future_x, ghost4_future_y = self.validMove(self.ghost4.x, self.ghost4.y, i)
+                    ghost4_now_x, ghost4_now_y = self.ghost4.x, self.ghost4.y
+
+                    self.ghost4.x, self.ghost4.y = ghost4_future_x, ghost4_future_y
+
+                    score = self.minimax(currentDepth + 1, targetDepth, 0)
+
+                    self.ghost4.x, self.ghost4.y = ghost4_now_x, ghost4_now_y
+
+                    bestScore = min(score, bestScore)
+            return bestScore
+
 
     def scoreFunction1(self):
         fromGhost1 = math.sqrt(
@@ -279,6 +323,12 @@ class Game:
                 turn = 2
             if turn == 2:
                 self.ghost2.x, self.ghost2.y = self.ghostMove(self.mapGame.array, self.ghost2)
+                turn = 3
+            if turn == 3:
+                self.ghost2.x, self.ghost2.y = self.ghostMove(self.mapGame.array, self.ghost2)
+                turn = 4
+            if turn == 4:
+                self.ghost2.x, self.ghost2.y = self.ghostMove(self.mapGame.array, self.ghost2)
                 turn = 0
             sleep(0.01)
             os.system("cls")
@@ -387,6 +437,8 @@ class Map:
 pacman = Pacman(1, 1)
 ghost1 = Ghost(1, 12)
 ghost2 = Ghost(1, 13)
+ghost3 = Ghost(1, 3)
+ghost4 = Ghost(1, 16)
 
 height = 11
 width = 20
@@ -394,7 +446,7 @@ array = [[0] * width] * height
 mapGame = Map(height, width, array)
 mapGame.fillMap()
 
-game = Game(mapGame, pacman, ghost1, ghost2, 0, 0)
+game = Game(mapGame, pacman, ghost1, ghost2, ghost3, ghost4, 0, 0)
 
 # </editor-fold>
 
