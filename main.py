@@ -81,6 +81,7 @@ class Game:
 
     def minimax(self, currentDepth, targetDepth, isMaximizing):
         if currentDepth == targetDepth:
+            # print("selfScore", self.score)
             self.score = self.scoreFunction3()
             return self.score
 
@@ -96,14 +97,20 @@ class Game:
 
                     self.pacman.x, self.pacman.y = pacman_future_x, pacman_future_y
 
+                    score_now = self.score
+
                     score = self.minimax(currentDepth, targetDepth, 1)
+                    # self.score = self.minimax(currentDepth, targetDepth, 1)
 
                     self.mapGame.array[pacman_future_x][pacman_future_y] = food
                     self.pacman.x, self.pacman.y = pacman_now_x, pacman_now_y
+
                     # print("SCORE", score, i)
                     if score > bestScore:
                         bestScore = score
                         move = i
+
+                    self.score = score_now
 
             if currentDepth == 0:
                 x, y = self.validMove(self.pacman.x, self.pacman.y, move)
@@ -112,10 +119,12 @@ class Game:
                 else:
                     self.scoreBoard -= 1
                 self.mapGame.array[x][y] = " "
-                print("BestSCORE", bestScore)
+                # print("BestSCORE", bestScore)
                 return self.validMove(self.pacman.x, self.pacman.y, move)
             else:
-                return bestScore
+                self.score += bestScore
+                # return bestScore
+                return self.score
 
         elif isMaximizing == 1:
             bestScore = float('inf')
@@ -125,14 +134,18 @@ class Game:
                     ghost1_now_x, ghost1_now_y = self.ghost1.x, self.ghost1.y
 
                     self.ghost1.x, self.ghost1.y = ghost1_future_x, ghost1_future_y
+                    score_now = self.score
 
                     score = self.minimax(currentDepth, targetDepth, 2)
 
                     self.ghost1.x, self.ghost1.y = ghost1_now_x, ghost1_now_y
+                    self.score = score_now
 
                     bestScore = min(bestScore, score)
 
-            return bestScore
+            self.score += bestScore
+            # return bestScore
+            return self.score
 
         elif isMaximizing == 2:
             bestScore = float('inf')
@@ -148,8 +161,9 @@ class Game:
                     self.ghost2.x, self.ghost2.y = ghost2_now_x, ghost2_now_y
 
                     bestScore = min(score, bestScore)
-            return bestScore
-
+            self.score += bestScore
+            # return bestScore
+            return self.score
     def scoreFunction1(self):
         fromGhost1 = math.sqrt(
             (self.pacman.x - self.ghost1.x) ** 2 + (self.pacman.y - self.ghost1.y) ** 2)
@@ -250,10 +264,12 @@ class Game:
         fromGhost2 = nx.shortest_path_length(G, (self.pacman.x, self.pacman.y), (self.ghost2.x, self.ghost2.y))
 
         closest_food = bfs_nearest_food((self.pacman.x, self.pacman.y))
+        # print("closetFood", closest_food)
 
         A = math.sqrt((self.mapGame.height - 2) ** 2 + (self.mapGame.width - 2) ** 2)
 
         score = ((A - closest_food) / A) * 9
+        # score = 1 / closest_food
         if min(fromGhost1, fromGhost2) < 3:
             score *= -1
         return score
@@ -272,7 +288,9 @@ class Game:
                 break
 
             if turn == 0:
+                self.score = 0
                 self.pacman.x, self.pacman.y = self.minimax(0, target, 0)
+                # print("asdfadsf", self.score)
                 turn = 1
             if turn == 1:
                 self.ghost1.x, self.ghost1.y = self.ghostMove(self.mapGame.array, self.ghost1)
@@ -280,7 +298,7 @@ class Game:
             if turn == 2:
                 self.ghost2.x, self.ghost2.y = self.ghostMove(self.mapGame.array, self.ghost2)
                 turn = 0
-            sleep(0.01)
+            sleep(0.1)
             os.system("cls")
 
 
