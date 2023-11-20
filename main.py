@@ -81,9 +81,8 @@ class Game:
 
     def minimax(self, currentDepth, targetDepth, isMaximizing):
         if currentDepth == targetDepth:
-            # print("selfScore", self.score)
-            self.score = self.scoreFunction3()
-            return self.score
+            score = self.scoreFunction3()
+            return score
 
         if isMaximizing == 0:
             move = "U"
@@ -110,7 +109,7 @@ class Game:
                         bestScore = score
                         move = i
 
-                    self.score = score_now
+                    # self.score = score_now
 
             if currentDepth == 0:
                 x, y = self.validMove(self.pacman.x, self.pacman.y, move)
@@ -122,9 +121,9 @@ class Game:
                 # print("BestSCORE", bestScore)
                 return self.validMove(self.pacman.x, self.pacman.y, move)
             else:
-                self.score += bestScore
-                # return bestScore
-                return self.score
+                # self.score += bestScore
+                return bestScore
+                # return selflf.score
 
         elif isMaximizing == 1:
             bestScore = float('inf')
@@ -134,18 +133,18 @@ class Game:
                     ghost1_now_x, ghost1_now_y = self.ghost1.x, self.ghost1.y
 
                     self.ghost1.x, self.ghost1.y = ghost1_future_x, ghost1_future_y
-                    score_now = self.score
+                    # score_now = self.score
 
                     score = self.minimax(currentDepth, targetDepth, 2)
 
                     self.ghost1.x, self.ghost1.y = ghost1_now_x, ghost1_now_y
-                    self.score = score_now
+                    # self.score = score_now
 
                     bestScore = min(bestScore, score)
 
-            self.score += bestScore
-            # return bestScore
-            return self.score
+            # self.score += bestScore
+            return bestScore
+            # return self.score
 
         elif isMaximizing == 2:
             bestScore = float('inf')
@@ -161,9 +160,9 @@ class Game:
                     self.ghost2.x, self.ghost2.y = ghost2_now_x, ghost2_now_y
 
                     bestScore = min(score, bestScore)
-            self.score += bestScore
-            # return bestScore
-            return self.score
+            # self.score += bestScore
+            return bestScore
+            # return self.score
     def scoreFunction1(self):
         fromGhost1 = math.sqrt(
             (self.pacman.x - self.ghost1.x) ** 2 + (self.pacman.y - self.ghost1.y) ** 2)
@@ -273,6 +272,15 @@ class Game:
         if min(fromGhost1, fromGhost2) < 3:
             score *= -1
         return score
+
+    def scoreFunction4(self):
+
+        fromGhost1 = math.sqrt(
+            (self.pacman.x - self.ghost1.x) ** 2 + (self.pacman.y - self.ghost1.y) ** 2)
+        fromGhost2 = math.sqrt(
+            (self.pacman.x - self.ghost2.x) ** 2 + (self.pacman.y - self.ghost2.y) ** 2)
+
+        return min(fromGhost1, fromGhost2)
 
     def startGame(self, target, turn):
         i = 0
@@ -415,6 +423,5 @@ mapGame.fillMap()
 game = Game(mapGame, pacman, ghost1, ghost2, 0, 0)
 
 # </editor-fold>
-
 
 game.startGame(1, 0)
